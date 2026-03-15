@@ -76,10 +76,30 @@ Tap to start singing...
 
 <script>
 
-function buzzWrong(){
+function buzzWrong(firstWord){
 
-status.innerText = "❌ Wrong start! Try again";
-status.classList.add("text-red-500");
+status.innerText=`❌ Wrong start! Heard "${firstWord}"`;
+
+alert(`❌ Wrong Start!\nHeard: "${firstWord}"`);
+
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+
+osc.type = "square";
+osc.frequency.value = 220;
+
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+gain.gain.value = 0.2;
+
+osc.start();
+
+setTimeout(()=>{
+osc.stop();
+ctx.close();
+},300);
 
 micBtn.classList.remove("pulse","bg-red-500");
 micBtn.classList.add("bg-red-700");
@@ -90,6 +110,7 @@ setTimeout(()=>{
 if(gameState.isRecording){
 micBtn.classList.remove("bg-red-700");
 micBtn.classList.add("pulse","bg-red-500");
+gameState.waitingForRestart=false;
 recognition.start();
 }
 },1000);
@@ -301,21 +322,7 @@ stopSinging();
 
 }else{
 
-status.innerText=`❌ Wrong start! Heard "${firstWord}". Attempt ${gameState.attempts}/3`;
-
-micBtn.classList.remove("pulse","bg-red-500");
-micBtn.classList.add("bg-red-700");
-
-recognition.abort();
-
-setTimeout(()=>{
-if(gameState.isRecording){
-micBtn.classList.remove("bg-red-700");
-micBtn.classList.add("pulse","bg-red-500");
-gameState.waitingForRestart=false;
-recognition.start();
-}
-},1000);
+buzzWrong(firstWord);
 
 }
 }
