@@ -162,6 +162,28 @@ timerBar.style.width =
 
 if(gameState.timeLeft<=0){
 
+if(gameState.songValidated){
+
+let cleanSong = gameState.fullTranscript.toUpperCase();
+
+let nextLetter="A";
+
+for(let i=cleanSong.length-1;i>=0;i--){
+
+let mapped = phoneticMap[cleanSong[i]] || cleanSong[i];
+
+if(alphabet.includes(mapped)){
+nextLetter = mapped;
+break;
+}
+
+}
+
+gameState.currentLetter = nextLetter;
+updateUI();
+
+}
+
 status.innerText="Time Up! Next player.";
 stopSinging();
 
@@ -201,7 +223,8 @@ timeLeft: GAME_CONFIG.TURN_TIME,
 attempts: 0,
 waitingForRestart: false,
 firstWordCaptured: false,
-songValidated: false
+songValidated: false,
+fullTranscript: ""
 };
 
 const phoneticMap = { 
@@ -271,6 +294,7 @@ gameState.firstWordCaptured = false;
 gameState.songValidated = false;
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
+gameState.fullTranscript = "";
 
 status.innerText = "Listening... Sing now!";
 status.classList.remove('text-red-500');
@@ -303,6 +327,8 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
+gameState.fullTranscript = phrase;   // store latest full transcript
+
 if(!gameState.firstWordCaptured){
 
 let words = phrase.split(/\s+/);
@@ -322,7 +348,6 @@ if(gameState.isRecording)
 status.innerText="Heard: "+phrase;
 
 };
-
     
 
 function handleVoiceInput(text){
