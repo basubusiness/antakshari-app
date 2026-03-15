@@ -43,83 +43,96 @@
             </ul>
     </div>
 
-    <script>
+<script>
         let currentLetter = "M";
         let usedSongs = new Set();
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         
+        // Mapping Hindi characters to English letters
+        const hindiMap = {
+            'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I', 'उ': 'U', 'ऊ': 'U', 'ए': 'E', 'ऐ': 'A', 'ओ': 'O', 'औ': 'O',
+            'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 'ट': 'T', 'ठ': 'T',
+            'ड': 'D', 'ढ': 'D', 'त': 'T', 'थ': 'T', 'द': 'D', 'ध': 'D', 'न': 'N', 'प': 'P', 'फ': 'P', 'ब': 'B',
+            'भ': 'B', 'म': 'M', 'य': 'Y', 'र': 'R', 'ल': 'L', 'व': 'V', 'श': 'S', 'ष': 'S', 'स': 'S', 'ह': 'H'
+        };
+
         const micBtn = document.getElementById('micBtn');
         const status = document.getElementById('status');
         const letterDisplay = document.getElementById('currentLetter');
         const historyList = document.getElementById('history');
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            status.innerText = "Browser doesn't support Voice. Use Chrome!";
-        } else {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'hi-IN'; 
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'hi-IN'; 
 
-            micBtn.onclick = () => {
-                try { recognition.start(); } catch(e) {}
-                status.innerText = "Listening for song...";
-                micBtn.classList.add('pulse', 'bg-red-500');
-            };
+        micBtn.onclick = () => {
+            try { recognition.start(); } catch(e) {}
+            status.innerText = "Listening...";
+            micBtn.classList.add('pulse', 'bg-red-500');
+        };
 
-            recognition.onresult = (event) => {
-                const song = event.results[0][0].transcript;
-                processSong(song);
-            };
+        recognition.onresult = (event) => {
+            let song = event.results[0][0].transcript;
+            processSong(song);
+        };
 
-            recognition.onend = () => {
-                micBtn.classList.remove('pulse', 'bg-red-500');
-            };
-        }
+        recognition.onend = () => { micBtn.classList.remove('pulse', 'bg-red-500'); };
 
         function processSong(song) {
             const cleanSong = song.trim();
-            const firstChar = cleanSong.charAt(0).toUpperCase();
+            let firstChar = cleanSong.charAt(0);
+            
+            // If the first character is Hindi, convert it to English letter
+            if (hindiMap[firstChar]) {
+                firstChar = hindiMap[firstChar];
+            } else {
+                firstChar = firstChar.toUpperCase();
+            }
             
             if (firstChar !== currentLetter) {
-                status.innerText = `Must start with ${currentLetter}. (Detected: ${firstChar})`;
+                status.innerText = `Must start with ${currentLetter}. (Detected: ${cleanSong[0]})`;
                 return;
             }
 
             if (usedSongs.has(cleanSong.toLowerCase())) {
-                status.innerText = "Already played! Try another.";
+                status.innerText = "Already played!";
                 return;
             }
 
             usedSongs.add(cleanSong.toLowerCase());
-            const lastChar = cleanSong.slice(-1).toUpperCase();
             
+            // Get last letter (handle Hindi or English)
+            let lastCharRaw = cleanSong.slice(-1);
+            let lastChar = hindiMap[lastCharRaw] || lastCharRaw.toUpperCase();
+            
+            // Safety: if the last char isn't a letter (like a matra), 
+            // we grab the second to last or stay on a random letter.
+            if (!alphabet.includes(lastChar)) {
+                lastChar = alphabet[Math.floor(Math.random() * 26)];
+            }
+
             updateGame(cleanSong, lastChar);
         }
 
         function updateGame(song, nextLetter) {
             currentLetter = nextLetter;
             letterDisplay.innerText = currentLetter;
-            status.innerText = "Great! Next player's turn.";
-            
+            status.innerText = "Success! Next player...";
             const li = document.createElement('li');
-            li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center animate-fadeIn";
-            li.innerHTML = `<span class="font-medium">${song}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
+            li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center";
+            li.innerHTML = `<span>${song}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
             historyList.prepend(li);
         }
 
         function skipLetter() {
-            const newLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
-            currentLetter = newLetter;
+            currentLetter = alphabet[Math.floor(Math.random() * 26)];
             letterDisplay.innerText = currentLetter;
-            status.innerText = "Letter skipped! New letter assigned.";
         }
 
         function resetGame() {
-            if(confirm("Start a new game?")) {
-                usedSongs.clear();
-                historyList.innerHTML = "";
-                skipLetter();
-            }
+            usedSongs.clear();
+            historyList.innerHTML = "";
+            skipLetter();
         }
     </script>
 </body>
