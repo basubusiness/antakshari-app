@@ -7,6 +7,19 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
+
+#buzzerOverlay{
+animation: buzzFlash 0.8s ease;
+}
+
+@keyframes buzzFlash{
+0%{opacity:0;}
+20%{opacity:1;}
+80%{opacity:1;}
+100%{opacity:0;}
+}
+
+    
 body { 
 touch-action: manipulation; 
 overflow: hidden; 
@@ -33,6 +46,13 @@ to{opacity:1;transform:translateY(0);}
 }
 </style>
 </head>
+
+<div id="buzzerOverlay" class="fixed inset-0 bg-red-700 bg-opacity-90 hidden flex items-center justify-center z-50">
+    <div class="text-center">
+        <div class="text-7xl font-black mb-4">❌</div>
+        <div id="buzzerText" class="text-2xl font-bold"></div>
+    </div>
+</div>    
 
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-6">
 
@@ -80,44 +100,42 @@ function buzzWrong(firstWord){
 
 status.innerText=`❌ Wrong start! Heard "${firstWord}"`;
 
-alert(`❌ Wrong Start!\nHeard: "${firstWord}"`);
+buzzerText.innerText=`Heard: "${firstWord}"`;
+buzzerOverlay.classList.remove("hidden");
 
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
 const osc = ctx.createOscillator();
 const gain = ctx.createGain();
 
-osc.type = "square";
-osc.frequency.value = 220;
+osc.type="square";
+osc.frequency.value=140;
 
 osc.connect(gain);
 gain.connect(ctx.destination);
 
-gain.gain.value = 0.2;
+gain.gain.value=0.25;
 
 osc.start();
 
 setTimeout(()=>{
 osc.stop();
 ctx.close();
-},300);
-
-micBtn.classList.remove("pulse","bg-red-500");
-micBtn.classList.add("bg-red-700");
+},400);
 
 recognition.abort();
 
 setTimeout(()=>{
+
+buzzerOverlay.classList.add("hidden");
+
 if(gameState.isRecording){
-micBtn.classList.remove("bg-red-700");
-micBtn.classList.add("pulse","bg-red-500");
 gameState.waitingForRestart=false;
 recognition.start();
 }
+
 },1000);
 
 }
-
-    
 
 function startTimer(){
 
@@ -187,7 +205,10 @@ const status = document.getElementById('status');
 const letterDisplay = document.getElementById('currentLetter');
 const historyList = document.getElementById('history');
 const timerBar = document.getElementById('timerBar');
+const buzzerOverlay = document.getElementById('buzzerOverlay');
+const buzzerText = document.getElementById('buzzerText');
 
+    
 function updateUI(){
 letterDisplay.innerText = gameState.currentLetter;
 }
