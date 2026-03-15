@@ -48,13 +48,25 @@
         let usedSongs = new Set();
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         
-        // Comprehensive Hindi to English Phonetic Map
+        // 2026 Smart Phonetic Map (Groups similar sounds)
         const phoneticMap = {
-            'म': 'M', 'न': 'N', 'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 
-            'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 'त': 'T', 'थ': 'T', 
-            'द': 'D', 'ध': 'D', 'प': 'P', 'फ': 'P', 'ब': 'B', 'भ': 'B', 
-            'य': 'Y', 'र': 'R', 'ल': 'L', 'व': 'V', 'स': 'S', 'श': 'S', 
-            'ष': 'S', 'ह': 'H', 'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I'
+            'म': 'M', 'न': 'N', 'ण': 'N',
+            'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 
+            'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 
+            'त': 'T', 'थ': 'T', 'ट': 'T', 'ठ': 'T', 
+            'द': 'D', 'ध': 'D', 'ड': 'D', 'ढ': 'D',
+            'प': 'P', 'फ': 'P', 'ब': 'B', 'भ': 'B', 'व': 'V',
+            'य': 'Y', 'र': 'R', 'ल': 'L', 'स': 'S', 'श': 'S', 'ष': 'S', 'ह': 'H',
+            'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I', 'उ': 'U', 'ऊ': 'U', 'ए': 'E', 'ओ': 'O'
+        };
+
+        // Sound Similarity Groups (Allows 'B' to work for 'V' prompts if needed)
+        const similarityGroups = {
+            'V': ['V', 'B', 'P'],
+            'B': ['B', 'V', 'P'],
+            'T': ['T', 'D'],
+            'D': ['D', 'T'],
+            'S': ['S', 'C']
         };
 
         const micBtn = document.getElementById('micBtn');
@@ -67,7 +79,7 @@
         recognition.lang = 'hi-IN'; 
 
         micBtn.onclick = () => {
-            try { recognition.start(); } catch(e) { console.error(e); }
+            try { recognition.start(); } catch(e) {}
             status.innerText = "Listening...";
             micBtn.classList.add('pulse', 'bg-red-500');
         };
@@ -80,16 +92,20 @@
         recognition.onend = () => { micBtn.classList.remove('pulse', 'bg-red-500'); };
 
         function processSong(song) {
-            // 1. Clean the input: Remove punctuation like periods, commas, and trailing spaces
             const cleanSong = song.trim().replace(/[.,!?;:]/g, "");
             const firstChar = cleanSong.charAt(0);
-            
-            // Map the first character to English
             let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
-            // Validation
-            if (detectedLetter !== currentLetter) {
-                status.innerText = `Must start with ${currentLetter}. (Detected: ${firstChar})`;
+            // Check if detected letter matches OR is in the same similarity group
+            let isMatch = (detectedLetter === currentLetter);
+            if (!isMatch && similarityGroups[currentLetter]) {
+                if (similarityGroups[currentLetter].includes(detectedLetter)) {
+                    isMatch = true;
+                }
+            }
+
+            if (!isMatch) {
+                status.innerText = `Need ${currentLetter}. (Heard: ${firstChar} / ${detectedLetter})`;
                 return;
             }
 
@@ -100,13 +116,11 @@
 
             usedSongs.add(cleanSong.toLowerCase());
             
-            // 2. SMART LAST LETTER LOGIC
-            // We loop backwards from the end of the song to find the first valid A-Z or Hindi consonant
-            let nextLetter = "A"; // Default fallback
+            // Smart Last Letter Logic
+            let nextLetter = "A"; 
             for (let i = cleanSong.length - 1; i >= 0; i--) {
                 let char = cleanSong[i];
                 let mapped = phoneticMap[char] || char.toUpperCase();
-                
                 if (alphabet.includes(mapped)) {
                     nextLetter = mapped;
                     break; 
@@ -119,7 +133,7 @@
         function updateGame(song, nextLetter) {
             currentLetter = nextLetter;
             letterDisplay.innerText = currentLetter;
-            status.innerText = "Success! Next player...";
+            status.innerText = "Accepted! Next player...";
             const li = document.createElement('li');
             li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center";
             li.innerHTML = `<span>${song}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
@@ -129,6 +143,7 @@
         function skipLetter() {
             currentLetter = alphabet[Math.floor(Math.random() * 26)];
             letterDisplay.innerText = currentLetter;
+            status.innerText = "Letter skipped!";
         }
 
         function resetGame() {
@@ -137,6 +152,5 @@
             skipLetter();
         }
     </script>
-
 </body>
 </html>
