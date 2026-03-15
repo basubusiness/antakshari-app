@@ -405,11 +405,8 @@ const li=document.createElement('li');
 
 li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
 
-li.innerHTML=`<span>${cleanSong}</span>
-<span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${gameState.currentLetter}</span>`;
-
+li.innerHTML=`<span>${cleanSong}</span>`;
 historyList.prepend(li);
-
 
 
 status.innerText="✅ Correct start! Keep singing...";
