@@ -87,10 +87,11 @@ Tap to start singing...
 </p>
 
 <div class="flex gap-2 justify-center">
+<button onclick="endSong()" class="text-xs bg-yellow-700 hover:bg-yellow-600 px-4 py-2 rounded-full text-white">End</button>
 <button onclick="skipLetter()" class="text-xs bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-full text-slate-300">Skip</button>
 <button onclick="resetGame()" class="text-xs bg-red-900/30 hover:bg-red-900/50 px-4 py-2 rounded-full text-red-400 border border-red-900/50">Reset</button>
 </div>
-
+    
 </div>
 
 <div class="mt-8 w-full max-w-md overflow-hidden">
@@ -202,7 +203,11 @@ attempts: 0,
 waitingForRestart: false,
 firstWordCaptured: false,
 songValidated: false,
-currentTranscript: ""
+currentTranscript: "",
+linesDetected: 0,
+lastSpeechTime: 0,
+lastLineText: "",
+silenceTimer: null
 };
 
 const phoneticMap = { 
@@ -271,9 +276,11 @@ gameState.waitingForRestart = false;
 gameState.firstWordCaptured = false;
 gameState.songValidated = false;
 gameState.currentTranscript = "";
+gameState.linesDetected = 0;
+gameState.lastLineText = "";
+gameState.lastSpeechTime = Date.now();
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
-
 status.innerText = "Listening... Sing now!";
 status.classList.remove('text-red-500');
 
@@ -307,6 +314,24 @@ phrase = event.results[i][0].transcript.trim();
 
 gameState.currentTranscript = phrase;
 
+gameState.lastSpeechTime = Date.now();
+
+let words = phrase.trim().split(/\s+/);
+let wordCount = words.length;
+
+if(wordCount > 3){
+
+let lineKey = words.slice(0,4).join(" ");
+
+if(lineKey !== gameState.lastLineText){
+
+gameState.linesDetected++;
+gameState.lastLineText = lineKey;
+
+}
+
+}
+
 if(!gameState.firstWordCaptured){
 
 let words = phrase.split(/\s+/);
@@ -330,12 +355,39 @@ if(gameState.isRecording)
 status.innerText="Heard: "+phrase;
 
 };
+
+setInterval(()=>{
+
+if(!gameState.isRecording) return;
+
+if(!gameState.songValidated) return;
+
+let silence = (Date.now() - gameState.lastSpeechTime)/1000;
+
+if(silence > 5 && gameState.linesDetected >= 2){
+endSong();
+}
+
+},1000);
     
 
 function handleVoiceInput(text){
 validateAndMoveOn(text);
 }
 
+function endSong(){
+
+if(gameState.linesDetected < 2){
+status.innerText="Sing at least two lines before ending.";
+return;
+}
+
+stopSinging();
+
+status.innerText="🎵 Song ended. Next letter: "+gameState.currentLetter;
+
+}
+    
 function validateAndMoveOn(songPhrase){
 if(gameState.songValidated) return;
 if (gameState.waitingForRestart) return;
