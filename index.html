@@ -96,16 +96,29 @@
             const firstChar = cleanSong.charAt(0);
             let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
-            // Check if detected letter matches OR is in the same similarity group
+            // 1. RELAXED VALIDATION
             let isMatch = (detectedLetter === currentLetter);
-            if (!isMatch && similarityGroups[currentLetter]) {
-                if (similarityGroups[currentLetter].includes(detectedLetter)) {
+            
+            // If it's not a direct match, check common "Sounds-Like" families
+            if (!isMatch) {
+                const bFamily = ['ब', 'भ', 'व', 'प', 'फ', 'B', 'V', 'P'];
+                const tFamily = ['त', 'थ', 'ट', 'ठ', 'T'];
+                const dFamily = ['द', 'ध', 'ड', 'ढ', 'D'];
+                const sFamily = ['स', 'श', 'ष', 'S', 'C'];
+
+                if (currentLetter === 'V' || currentLetter === 'B') {
+                    if (bFamily.includes(firstChar) || bFamily.includes(detectedLetter)) isMatch = true;
+                } else if (currentLetter === 'T' && (tFamily.includes(firstChar) || tFamily.includes(detectedLetter))) {
+                    isMatch = true;
+                } else if (currentLetter === 'D' && (dFamily.includes(firstChar) || dFamily.includes(detectedLetter))) {
+                    isMatch = true;
+                } else if (currentLetter === 'S' && (sFamily.includes(firstChar) || sFamily.includes(detectedLetter))) {
                     isMatch = true;
                 }
             }
 
             if (!isMatch) {
-                status.innerText = `Need ${currentLetter}. (Heard: ${firstChar} / ${detectedLetter})`;
+                status.innerText = `Need ${currentLetter}. (Detected: ${firstChar})`;
                 return;
             }
 
@@ -116,7 +129,7 @@
 
             usedSongs.add(cleanSong.toLowerCase());
             
-            // Smart Last Letter Logic
+            // 2. SMART LAST LETTER
             let nextLetter = "A"; 
             for (let i = cleanSong.length - 1; i >= 0; i--) {
                 let char = cleanSong[i];
@@ -129,7 +142,6 @@
 
             updateGame(cleanSong, nextLetter);
         }
-
         function updateGame(song, nextLetter) {
             currentLetter = nextLetter;
             letterDisplay.innerText = currentLetter;
