@@ -164,17 +164,35 @@ if(gameState.timeLeft<=0){
 
 if(gameState.songValidated){
 
-let cleanSong = gameState.fullTranscript.toUpperCase();
+let words = gameState.fullTranscript
+.toUpperCase()
+.split(/\s+/)
+.filter(w => w.length > 1 && !fillers.includes(w));
 
-let nextLetter="A";
+let nextLetter = "A";
 
-for(let i=cleanSong.length-1;i>=0;i--){
+// remove repeated trailing words like "hai hai hai"
+for(let i = words.length - 1; i > 0; i--){
+    if(words[i] === words[i-1]){
+        words.splice(i,1);
+    } else {
+        break;
+    }
+}    
+    
+if(words.length){
 
-let mapped = phoneticMap[cleanSong[i]] || cleanSong[i];
+let lastWord = words[words.length-1];
+
+for(let i=lastWord.length-1;i>=0;i--){
+
+let mapped = phoneticMap[lastWord[i]] || lastWord[i];
 
 if(alphabet.includes(mapped)){
 nextLetter = mapped;
 break;
+}
+
 }
 
 }
