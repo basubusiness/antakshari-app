@@ -461,7 +461,20 @@ const li=document.createElement('li');
 
 li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
 
-li.innerHTML=`<span>${cleanSong}</span>`;
+let words = cleanSong.split(/\s+/);
+
+let displayText = cleanSong;
+
+if(words.length > 8){
+
+let firstPart = words.slice(0,4).join(" ");
+let lastPart = words.slice(-4).join(" ");
+
+displayText = firstPart + " ... " + lastPart;
+
+}
+
+li.innerHTML = `<span>${displayText}</span>`;
 historyList.prepend(li);
 
 
