@@ -76,6 +76,37 @@ Tap to start singing...
 
 <script>
 
+
+function startTimer(){
+
+gameState.timerInterval = setInterval(()=>{
+
+gameState.timeLeft -= .1;
+
+timerBar.style.width =
+((GAME_CONFIG.TURN_TIME-gameState.timeLeft)/GAME_CONFIG.TURN_TIME)*100+"%";
+
+if(gameState.timeLeft<=0){
+
+status.innerText="Time Up! Next player.";
+stopSinging();
+
+}
+
+},100);
+
+}
+
+function stopTimer(){
+
+clearInterval(gameState.timerInterval);
+
+timerBar.style.width="0%";
+
+}
+
+    
+
 const GAME_CONFIG = {
 TURN_TIME: 30,
 MAX_ATTEMPTS: 3
@@ -162,19 +193,7 @@ micBtn.classList.add('pulse','bg-red-500');
 
 try{recognition.start()}catch(e){}
 
-gameState.timerInterval = setInterval(()=>{
-
-gameState.timeLeft -= .1;
-
-timerBar.style.width =
-((GAME_CONFIG.TURN_TIME-gameState.timeLeft)/GAME_CONFIG.TURN_TIME)*100+"%";
-
-if(gameState.timeLeft<=0){
-status.innerText="Time Up! Next player.";
-stopSinging();
-}
-
-},100);
+startTimer();
 
 }
 
@@ -182,13 +201,11 @@ function stopSinging(){
 
 gameState.isRecording=false;
 
-clearInterval(gameState.timerInterval);
+stopTimer();
 
 try{recognition.stop()}catch(e){}
 
 micBtn.classList.remove('pulse','bg-red-500');
-
-timerBar.style.width="0%";
 
 }
 
