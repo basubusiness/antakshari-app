@@ -64,6 +64,8 @@
         let isRecording = false;
         let timerInterval;
         let timeLeft = 30;
+        let attempts = 0; // To-be: Track reattempts
+        const MAX_ATTEMPTS = 3;
 
         // Phonetic Mapping for AI recognition
         const phoneticMap = { 
@@ -94,6 +96,7 @@
         };
 
         function startSinging() {
+            attempts = 0; // Ensure we start fresh
             isRecording = true;
             timeLeft = 30;
             status.innerText = "Listening... Sing now!";
@@ -132,52 +135,64 @@
         };
 
         function validateAndMoveOn(songPhrase) {
-            const cleanSong = songPhrase.replace(/[.,!?;:]/g, "");
-            const firstChar = cleanSong.charAt(0);
-            let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
+    const cleanSong = songPhrase.replace(/[.,!?;:]/g, "").trim();
+    if (!cleanSong) return;
 
-            // Sound Family Matching
-            let isMatch = (detectedLetter === currentLetter);
-            if (!isMatch) {
-                if ((currentLetter === 'V' || currentLetter === 'B') && bFamily.includes(firstChar)) isMatch = true;
-                if ((currentLetter === 'T' || currentLetter === 'D') && tFamily.includes(firstChar)) isMatch = true;
-            }
+    const firstChar = cleanSong.charAt(0);
+    let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
-            if (isMatch) {
-                if (usedSongs.has(cleanSong.toLowerCase())) {
-                    status.innerText = "Already sung! Try another song.";
-                    return; 
-                }
-                
-                // Logic for success
-                usedSongs.add(cleanSong.toLowerCase());
-                
-                // Find Next Letter (Scan backwards)
-                let nextLetter = "A"; 
-                for (let i = cleanSong.length - 1; i >= 0; i--) {
-                    let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
-                    if (alphabet.includes(mapped)) {
-                        nextLetter = mapped;
-                        break; 
-                    }
-                }
+    // Sound Family Matching
+    let isMatch = (detectedLetter === currentLetter);
+    if (!isMatch) {
+        if ((currentLetter === 'V' || currentLetter === 'B') && bFamily.includes(firstChar)) isMatch = true;
+        if ((currentLetter === 'T' || currentLetter === 'D') && tFamily.includes(firstChar)) isMatch = true;
+    }
 
-                currentLetter = nextLetter;
-                letterDisplay.innerText = currentLetter;
-                
-                const li = document.createElement('li');
-                li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
-                li.innerHTML = `<span>${cleanSong}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
-                historyList.prepend(li);
-                
-                stopSinging();
-                status.innerText = "Success! Next Letter: " + nextLetter;
-            } else {
-                // If wrong, we keep the mic on and let them try again
-                status.innerText = `Must start with ${currentLetter}. (Heard: ${firstChar})`;
-                status.classList.add('text-red-500');
+    if (isMatch) {
+        // --- SUCCESS PATH ---
+        if (usedSongs.has(cleanSong.toLowerCase())) {
+            status.innerText = "Already sung! Try another.";
+            return; 
+        }
+        
+        usedSongs.add(cleanSong.toLowerCase());
+        
+        // Find Next Letter
+        let nextLetter = "A"; 
+        for (let i = cleanSong.length - 1; i >= 0; i--) {
+            let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
+            if (alphabet.includes(mapped)) {
+                nextLetter = mapped;
+                break; 
             }
         }
+
+        currentLetter = nextLetter;
+        letterDisplay.innerText = currentLetter;
+        
+        const li = document.createElement('li');
+        li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
+        li.innerHTML = `<span>${cleanSong}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
+        historyList.prepend(li);
+        
+        stopSinging();
+        status.innerText = "Accepted! Next: " + nextLetter;
+        attempts = 0; // Reset for next player
+
+    } else {
+        // --- REATTEMPT PATH ---
+        attempts++;
+        if (attempts >= MAX_ATTEMPTS) {
+            status.innerText = "3 Failures. Turn Over!";
+            stopSinging();
+            attempts = 0;
+        } else {
+            status.innerText = `Try ${attempts}/3: Need ${currentLetter} (Heard ${firstChar})`;
+            status.classList.add('text-red-500');
+            // Mic stays on, timer keeps ticking
+        }
+    }
+}
 
         function skipLetter() {
             currentLetter = alphabet[Math.floor(Math.random() * 26)];
