@@ -104,23 +104,23 @@ buzzerText.innerText=`Heard: "${firstWord}"`;
 buzzerOverlay.classList.remove("hidden");
 
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
 const osc = ctx.createOscillator();
 const gain = ctx.createGain();
 
-osc.type="square";
-osc.frequency.value=140;
+osc.type = "sine";
+
+osc.frequency.setValueAtTime(600, ctx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.25);
+
+gain.gain.setValueAtTime(0.15, ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
 
 osc.connect(gain);
 gain.connect(ctx.destination);
 
-gain.gain.value=0.25;
-
 osc.start();
-
-setTimeout(()=>{
-osc.stop();
-ctx.close();
-},400);
+osc.stop(ctx.currentTime + 0.25);
 
 recognition.abort();
 
