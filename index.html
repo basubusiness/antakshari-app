@@ -308,7 +308,7 @@ let words = phrase.split(/\s+/);
 if(words.length > 0 && words[0].length > 1){
 
 gameState.firstWordCaptured = true;
-handleVoiceInput(words[0]);
+handleVoiceInput(phrase);   // ← pass full phrase
 
 }
 
@@ -318,7 +318,6 @@ if(gameState.isRecording)
 status.innerText="Heard: "+phrase;
 
 };
-
 
     
 
@@ -399,7 +398,7 @@ break;
 gameState.currentLetter=nextLetter;
 
 updateUI();
-
+gameState.firstWordCaptured = false;
 const li=document.createElement('li');
 
 li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
