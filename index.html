@@ -143,6 +143,7 @@ buzzerOverlay.classList.add("hidden");
 
 if(gameState.isRecording){
 gameState.waitingForRestart=false;
+gameState.firstWordCaptured = false;
 recognition.start();
 }
 
@@ -198,7 +199,8 @@ isRecording: false,
 timerInterval: null,
 timeLeft: GAME_CONFIG.TURN_TIME,
 attempts: 0,
-waitingForRestart: false
+waitingForRestart: false,
+firstWordCaptured: false
 };
 
 const phoneticMap = { 
@@ -264,6 +266,7 @@ function startSinging(){
 
 gameState.attempts = 0;
 gameState.waitingForRestart = false;
+gameState.firstWordCaptured = false;
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
 
@@ -296,10 +299,17 @@ let phrase="";
 
 for(let i=event.resultIndex;i<event.results.length;++i){
 
-phrase=event.results[i][0].transcript.trim();
+phrase = event.results[i][0].transcript.trim();
 
-if(phrase.length > 6){
-handleVoiceInput(phrase);
+if(gameState.firstWordCaptured) return;
+
+let words = phrase.split(/\s+/);
+
+if(words.length > 0 && words[0].length > 1){
+
+gameState.firstWordCaptured = true;
+handleVoiceInput(words[0]);
+
 }
 
 }
@@ -308,6 +318,9 @@ if(gameState.isRecording)
 status.innerText="Heard: "+phrase;
 
 };
+
+
+    
 
 function handleVoiceInput(text){
 validateAndMoveOn(text);
