@@ -201,7 +201,8 @@ timeLeft: GAME_CONFIG.TURN_TIME,
 attempts: 0,
 waitingForRestart: false,
 firstWordCaptured: false,
-songValidated: false
+songValidated: false,
+currentTranscript: ""
 };
 
 const phoneticMap = { 
@@ -303,6 +304,8 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
+gameState.currentTranscript = phrase;
+
 if(!gameState.firstWordCaptured){
 
 let words = phrase.split(/\s+/);
@@ -322,7 +325,6 @@ if(gameState.isRecording)
 status.innerText="Heard: "+phrase;
 
 };
-
     
 
 function handleVoiceInput(text){
@@ -388,11 +390,22 @@ return;
 
 gameState.usedSongs.add(normalizeSong(cleanSong));
 
+let transcript = gameState.currentTranscript.trim();
+let words = transcript.split(/\s+/);
+
+let preview = transcript;
+
+if(words.length > 8){
+let first4 = words.slice(0,4).join(" ");
+let last4 = words.slice(-4).join(" ");
+preview = first4 + " ... " + last4;
+}
+
 let nextLetter="A";
 
-for(let i=cleanSong.length-1;i>=0;i--){
+for(let i=transcript.length-1;i>=0;i--){
 
-let mapped=phoneticMap[cleanSong[i]]||cleanSong[i].toUpperCase();
+let mapped=phoneticMap[transcript[i]]||transcript[i].toUpperCase();
 
 if(alphabet.includes(mapped)){
 nextLetter=mapped;
@@ -403,16 +416,18 @@ break;
 
 gameState.songValidated = true;
 gameState.firstWordCaptured = false;
+
 const li=document.createElement('li');
 
 li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
 
-li.innerHTML=`<span>${cleanSong}</span>`;
+li.innerHTML=`<span>${preview}</span>`;
 historyList.prepend(li);
 
+gameState.currentLetter = nextLetter;
+updateUI();
 
 status.innerText="✅ Correct start! Keep singing...";
-
 }
 
 function skipLetter(){
