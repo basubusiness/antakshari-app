@@ -74,6 +74,8 @@
             'द': 'D', 'ध': 'D', 'प': 'P', 'ब': 'B', 'भ': 'B', 'व': 'V', 
             'य': 'Y', 'र': 'R', 'ल': 'L', 'स': 'S', 'ह': 'H', 'अ': 'A', 'आ': 'A' 
         };
+        const fillers = ["अह", "उम", "ओह", "UH", "UM", "OH", "THE"];
+        let attempts = 0;
 
         const bFamily = ['ब', 'भ', 'व', 'प', 'फ', 'B', 'V', 'P'];
         const tFamily = ['त', 'थ', 'ट', 'ठ', 'T', 'D', 'द', 'ध', 'ड', 'ढ'];
@@ -135,63 +137,79 @@
         };
 
         function validateAndMoveOn(songPhrase) {
-    const cleanSong = songPhrase.replace(/[.,!?;:]/g, "").trim();
-    if (!cleanSong) return;
+    // 1. Clean and split into words
+    let words = songPhrase.trim().toUpperCase().split(/\s+/);
+    
+    // 2. Remove fillers (like 'Uh', 'Um') from the beginning
+    while (words.length > 0 && fillers.includes(words[0])) {
+        words.shift();
+    }
 
-    const firstChar = cleanSong.charAt(0);
-    let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
+    if (words.length === 0) return;
 
-    // Sound Family Matching
+    const firstWord = words[0];
+    const firstChar = firstWord.charAt(0);
+    
+    // Map Hindi characters to English if needed
+    let detectedLetter = phoneticMap[firstChar] || firstChar;
+
+    // 3. Strict Validation Logic
     let isMatch = (detectedLetter === currentLetter);
+    
+    // Family matching (B/V, T/D)
     if (!isMatch) {
         if ((currentLetter === 'V' || currentLetter === 'B') && bFamily.includes(firstChar)) isMatch = true;
         if ((currentLetter === 'T' || currentLetter === 'D') && tFamily.includes(firstChar)) isMatch = true;
     }
 
     if (isMatch) {
-        // --- SUCCESS PATH ---
-        if (usedSongs.has(cleanSong.toLowerCase())) {
-            status.innerText = "Already sung! Try another.";
-            return; 
-        }
-        
-        usedSongs.add(cleanSong.toLowerCase());
-        
-        // Find Next Letter
-        let nextLetter = "A"; 
-        for (let i = cleanSong.length - 1; i >= 0; i--) {
-            let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
-            if (alphabet.includes(mapped)) {
-                nextLetter = mapped;
-                break; 
-            }
-        }
-
-        currentLetter = nextLetter;
-        letterDisplay.innerText = currentLetter;
-        
-        const li = document.createElement('li');
-        li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
-        li.innerHTML = `<span>${cleanSong}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
-        historyList.prepend(li);
-        
-        stopSinging();
-        status.innerText = "Accepted! Next: " + nextLetter;
-        attempts = 0; // Reset for next player
-
+        // --- SUCCESS ---
+        processSuccess(songPhrase);
+        attempts = 0;
     } else {
-        // --- REATTEMPT PATH ---
+        // --- REJECT & GUIDE ---
         attempts++;
-        if (attempts >= MAX_ATTEMPTS) {
-            status.innerText = "3 Failures. Turn Over!";
+        status.classList.add('text-red-500');
+        
+        if (attempts >= 3) {
+            status.innerText = "Strike 3! Next player's turn.";
             stopSinging();
-            attempts = 0;
         } else {
-            status.innerText = `Try ${attempts}/3: Need ${currentLetter} (Heard ${firstChar})`;
-            status.classList.add('text-red-500');
-            // Mic stays on, timer keeps ticking
+            status.innerText = `Incorrect Start! Heard "${firstWord}". Try again (${attempts}/3)`;
+            // Crucial: Clear the phrase so the user starts fresh
+            recognition.abort(); // Temporarily stop
+            setTimeout(() => { if(isRecording) recognition.start(); }, 100); // Restart mic for clean input
         }
     }
+}
+
+// Move the history/next-letter logic here to keep validateClean
+function processSuccess(cleanSong) {
+    if (usedSongs.has(cleanSong.toLowerCase())) {
+        status.innerText = "Already sung! Try another.";
+        return;
+    }
+    usedSongs.add(cleanSong.toLowerCase());
+
+    let nextLetter = "A";
+    for (let i = cleanSong.length - 1; i >= 0; i--) {
+        let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
+        if (alphabet.includes(mapped)) {
+            nextLetter = mapped;
+            break;
+        }
+    }
+
+    currentLetter = nextLetter;
+    letterDisplay.innerText = currentLetter;
+    
+    const li = document.createElement('li');
+    li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
+    li.innerHTML = `<span>${cleanSong}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
+    historyList.prepend(li);
+    
+    stopSinging();
+    status.innerText = "Accepted! Next: " + nextLetter;
 }
 
         function skipLetter() {
