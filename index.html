@@ -162,53 +162,42 @@ timerBar.style.width =
 
 if(gameState.timeLeft<=0){
 
+if(gameState.songValidated){
+
 let words = gameState.fullTranscript
 .toUpperCase()
 .split(/\s+/)
 .filter(w => w.length > 1 && !fillers.includes(w));
 
-// remove repeated endings like "hai hai hai"
+let nextLetter = "A";
+
+// remove repeated trailing words like "hai hai hai"
 for(let i = words.length - 1; i > 0; i--){
     if(words[i] === words[i-1]){
         words.splice(i,1);
     } else {
         break;
     }
-}
-
-let nextLetter = "A";
-
+}    
+    
 if(words.length){
 
-let lastWord = words[words.length-1].toUpperCase();
-lastWord = lastWord.replace(/[^A-Z]/g,"");
+let lastWord = words[words.length-1];
 
-// vowels
-const vowels = ["A","E","I","O","U"];
+for(let i=lastWord.length-1;i>=0;i--){
 
-// Hindi-style YE ending (kahiye, jaiye, liye)
-if(lastWord.endsWith("YE")){
-    nextLetter = "Y";
-}
-else{
+let mapped = phoneticMap[lastWord[i]] || lastWord[i];
 
-// scan backward for last consonant sound
-for(let i = lastWord.length-1; i >= 0; i--){
-
-let char = lastWord[i];
-
-if(!vowels.includes(char)){
-    nextLetter = char;
-    break;
+if(alphabet.includes(mapped)){
+nextLetter = mapped;
+break;
 }
 
 }
 
-}
 }
 
 gameState.currentLetter = nextLetter;
-
 updateUI();
 
 }
