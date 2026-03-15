@@ -312,7 +312,16 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
+if(gameState.songValidated){
+
+gameState.currentTranscript += " " + phrase;
+gameState.currentTranscript = gameState.currentTranscript.trim();
+
+}else{
+
 gameState.currentTranscript = phrase;
+
+}
 
 gameState.lastSpeechTime = Date.now();
 
@@ -327,6 +336,11 @@ if(lineKey !== gameState.lastLineText){
 
 gameState.linesDetected++;
 gameState.lastLineText = lineKey;
+
+if(gameState.songValidated){
+gameState.currentTranscript += " " + phrase;
+gameState.currentTranscript = gameState.currentTranscript.trim();
+}
 
 }
 
