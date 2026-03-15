@@ -8,13 +8,13 @@
 
 <style>
 
-
-    
-body { 
-
 #buzzerOverlay{
 animation: buzzFlash 0.9s ease;
 }
+    
+body { 
+
+
 
 @keyframes buzzFlash{
 0%{opacity:0; transform:scale(0.96);}
@@ -402,6 +402,7 @@ break;
 gameState.currentLetter=nextLetter;
 
 updateUI();
+gameState.songValidated = true;
 gameState.firstWordCaptured = false;
 const li=document.createElement('li');
 
@@ -412,7 +413,7 @@ li.innerHTML=`<span>${cleanSong}</span>
 
 historyList.prepend(li);
 
-stopSinging();
+
 
 status.innerText="✅ Correct start! Keep singing...";
 
