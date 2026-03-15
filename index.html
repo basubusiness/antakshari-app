@@ -325,9 +325,10 @@ gameState.currentTranscript = phrase;
 
 }else{
 
-if(!gameState.currentTranscript.includes(phrase)){
-gameState.currentTranscript += " " + phrase;
-gameState.currentTranscript = gameState.currentTranscript.trim();
+if(phrase.length > gameState.currentTranscript.length){
+
+gameState.currentTranscript = phrase;
+
 }
 
 }
@@ -339,9 +340,9 @@ let wordCount = words.length;
 
 if(wordCount > 3){
 
-let lineKey = words.slice(0,4).join(" ");
+let lineKey = phrase.toLowerCase();
 
-if(lineKey !== gameState.lastLineText){
+if(!gameState.lastLineText || !lineKey.startsWith(gameState.lastLineText)){
 
 gameState.linesDetected++;
 gameState.lastLineText = lineKey;
@@ -606,7 +607,7 @@ let last4 = words.slice(-4).join(" ");
 preview = first4 + " ... " + last4;
 }
 
-let firstItem = historyList.firstChild;
+let firstItem = historyList.firstElementChild;
 
 if(firstItem){
 firstItem.innerHTML = `<span>${preview}</span>`;
