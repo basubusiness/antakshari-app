@@ -409,12 +409,57 @@ commitSong();
 
 }
 
+function getLastCompletedLine(text){
+
+let parts = text.trim().split(/\s{2,}|\n/);
+
+if(parts.length > 1){
+return parts[parts.length-1];
+}
+
+let words = text.trim().split(/\s+/);
+
+if(words.length > 6){
+return words.slice(-6).join(" ");
+}
+
+return text;
+
+}
+
+function getEndingLetter(line){
+
+let clean = line.trim().toUpperCase();
+
+for(let i = clean.length-1; i >=0; i--){
+
+let c = clean[i];
+
+if(/[BCDFGHJKLMNPQRSTVWXYZ]/.test(c)){
+return c;
+}
+
+if(/[AEIOU]/.test(c)){
+return c;
+}
+
+}
+
+return "A";
+
+}    
+    
 
 function commitSong(){
 
 stopSinging();
 
 let transcript = gameState.currentTranscript.trim();
+
+let lastLine = getLastCompletedLine(transcript);
+
+let nextLetter = getEndingLetter(lastLine);
+
 let words = transcript.split(/\s+/);
 
 let preview = transcript;
@@ -425,13 +470,17 @@ let last4 = words.slice(-4).join(" ");
 preview = first4 + " ... " + last4;
 }
 
+    
 let firstItem = historyList.firstElementChild;
 
 if(firstItem){
 firstItem.innerHTML = `<span>${preview}</span>`;
 }
 
-status.innerText="🎵 Song ended. Next letter: "+gameState.currentLetter;
+gameState.currentLetter = nextLetter;
+updateUI();
+
+status.innerText="🎵 Song ended. Next letter: "+nextLetter;
 
 }
 
@@ -512,18 +561,8 @@ let last4 = words.slice(-4).join(" ");
 preview = first4 + " ... " + last4;
 }
 
-let nextLetter="A";
-
-for(let i=transcript.length-1;i>=0;i--){
-
-let mapped=phoneticMap[transcript[i]]||transcript[i].toUpperCase();
-
-if(alphabet.includes(mapped)){
-nextLetter=mapped;
-break;
-}
-
-}
+// Next letter will be determined when the song ends
+let nextLetter = null;
 
 gameState.songValidated = true;
 gameState.firstWordCaptured = false;
@@ -535,8 +574,9 @@ li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-b
 li.innerHTML=`<span>Listening...</span>`;
 historyList.prepend(li);
 
-gameState.currentLetter = nextLetter;
-updateUI();
+// gameState.currentLetter = nextLetter;
+// updateUI();
+// Letter update happens at song commit
 
 status.innerText="✅ Correct start! Keep singing...";
 }
