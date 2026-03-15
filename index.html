@@ -124,7 +124,8 @@ usedSongs: new Set(),
 isRecording: false,
 timerInterval: null,
 timeLeft: GAME_CONFIG.TURN_TIME,
-attempts: 0
+attempts: 0,
+waitingForRestart: false
 };
 
 const phoneticMap = { 
@@ -161,8 +162,11 @@ return alphabet[index];
 function restartRecognition(){
     recognition.abort();
     setTimeout(()=>{
-        if(gameState.isRecording) recognition.start();
-    },150);
+    if(gameState.isRecording){
+        gameState.waitingForRestart = false;
+        recognition.start();
+    }
+},150);
 }
 
 function createSpeechEngine(){
@@ -183,6 +187,7 @@ else stopSinging();
 function startSinging(){
 
 gameState.attempts = 0;
+gameState.waitingForRestart = false;
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
 
@@ -235,7 +240,7 @@ validateAndMoveOn(text);
 }
 
 function validateAndMoveOn(songPhrase){
-
+if (gameState.waitingForRestart) return;
 let words=songPhrase.trim().toUpperCase().split(/\s+/);
 
 while(words.length>0 && fillers.includes(words[0])){
@@ -264,6 +269,7 @@ gameState.attempts=0;
 }else{
 
 gameState.attempts++;
+gameState.waitingForRestart = true;
 
 status.classList.add('text-red-500');
 
