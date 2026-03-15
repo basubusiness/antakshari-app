@@ -128,8 +128,10 @@ return alphabet[index];
 }
 
 function restartRecognition(){
-recognition.stop();
-setTimeout(()=>recognition.start(),150);
+    recognition.abort();
+    setTimeout(()=>{
+        if(gameState.isRecording) recognition.start();
+    },150);
 }
 
 function createSpeechEngine(){
