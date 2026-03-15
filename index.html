@@ -6,95 +6,120 @@
     <title>Antakshari Lite 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-6">
 
-    <header class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-yellow-400">Antakshari AI</h1>
-        <p class="text-slate-400">Sing the song starting with the letter below!</p>
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-bold text-yellow-400 tracking-tight">Antakshari AI</h1>
+        <p class="text-slate-400 text-sm">Lightweight Social Edition</p>
     </header>
 
     <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-slate-700">
         <div class="mb-4">
-            <span class="text-sm uppercase tracking-widest text-slate-400">Current Letter</span>
-            <div id="currentLetter" class="text-8xl font-black text-white mt-2">M</div>
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Current Letter</span>
+            <div id="currentLetter" class="text-9xl font-black text-white mt-2 transition-all">M</div>
         </div>
 
-        <button id="micBtn" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 transition-all active:scale-95 shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        <button id="micBtn" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-all active:scale-90 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 005 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-2v-2.07z" clip-rule="evenodd" />
             </svg>
         </button>
 
-        <p id="status" class="text-yellow-200 italic h-6">Tap the mic to sing...</p>
+        <p id="status" class="text-yellow-200 italic h-6 mb-4 text-sm font-medium">Tap to sing your song...</p>
+        
+        <div class="flex gap-2 justify-center">
+            <button onclick="skipLetter()" class="text-xs bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-full text-slate-300">Skip Letter</button>
+            <button onclick="resetGame()" class="text-xs bg-red-900/30 hover:bg-red-900/50 px-4 py-2 rounded-full text-red-400 border border-red-900/50">Reset</button>
+        </div>
     </div>
 
-    <div class="mt-8 w-full max-w-md">
-        <h3 class="text-lg font-semibold mb-4 text-slate-400">Song History</h3>
-        <ul id="history" class="space-y-2">
+    <div class="mt-8 w-full max-w-md overflow-hidden">
+        <h3 class="text-sm font-bold mb-4 text-slate-500 uppercase tracking-widest">Played Songs</h3>
+        <ul id="history" class="space-y-2 max-h-60 overflow-y-auto pr-2">
             </ul>
     </div>
 
     <script>
         let currentLetter = "M";
-        const usedSongs = new Set();
+        let usedSongs = new Set();
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         
         const micBtn = document.getElementById('micBtn');
         const status = document.getElementById('status');
         const letterDisplay = document.getElementById('currentLetter');
         const historyList = document.getElementById('history');
 
-        // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'hi-IN'; // Set to Hindi/Indian English context
+        if (!SpeechRecognition) {
+            status.innerText = "Browser doesn't support Voice. Use Chrome!";
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'hi-IN'; 
 
-        micBtn.onclick = () => {
-            recognition.start();
-            status.innerText = "Listening...";
-            micBtn.classList.add('pulse', 'bg-red-500');
-        };
+            micBtn.onclick = () => {
+                try { recognition.start(); } catch(e) {}
+                status.innerText = "Listening for song...";
+                micBtn.classList.add('pulse', 'bg-red-500');
+            };
 
-        recognition.onresult = (event) => {
-            const song = event.results[0][0].transcript;
-            processSong(song);
-        };
+            recognition.onresult = (event) => {
+                const song = event.results[0][0].transcript;
+                processSong(song);
+            };
 
-        recognition.onend = () => {
-            micBtn.classList.remove('pulse', 'bg-red-500');
-        };
+            recognition.onend = () => {
+                micBtn.classList.remove('pulse', 'bg-red-500');
+            };
+        }
 
         function processSong(song) {
-            const firstChar = song.trim().charAt(0).toUpperCase();
+            const cleanSong = song.trim();
+            const firstChar = cleanSong.charAt(0).toUpperCase();
             
-            // 1. Validate starting letter
             if (firstChar !== currentLetter) {
-                status.innerText = `Error: Song must start with ${currentLetter}!`;
+                status.innerText = `Must start with ${currentLetter}. (Detected: ${firstChar})`;
                 return;
             }
 
-            // 2. Duplicate Check
-            if (usedSongs.has(song.toLowerCase())) {
-                status.innerText = "Already sung! Try another.";
+            if (usedSongs.has(cleanSong.toLowerCase())) {
+                status.innerText = "Already played! Try another.";
                 return;
             }
 
-            // 3. Update State
-            usedSongs.add(song.toLowerCase());
-            const lastChar = song.trim().slice(-1).toUpperCase();
-            currentLetter = lastChar;
+            usedSongs.add(cleanSong.toLowerCase());
+            const lastChar = cleanSong.slice(-1).toUpperCase();
             
-            // 4. Update UI
+            updateGame(cleanSong, lastChar);
+        }
+
+        function updateGame(song, nextLetter) {
+            currentLetter = nextLetter;
             letterDisplay.innerText = currentLetter;
-            status.innerText = "Nice! Next player...";
+            status.innerText = "Great! Next player's turn.";
             
             const li = document.createElement('li');
-            li.className = "bg-slate-800 p-3 rounded-lg border-l-4 border-yellow-500 flex justify-between";
-            li.innerHTML = `<span>${song}</span> <span class="text-yellow-500 font-bold">→ ${lastChar}</span>`;
+            li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center animate-fadeIn";
+            li.innerHTML = `<span class="font-medium">${song}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
             historyList.prepend(li);
+        }
+
+        function skipLetter() {
+            const newLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+            currentLetter = newLetter;
+            letterDisplay.innerText = currentLetter;
+            status.innerText = "Letter skipped! New letter assigned.";
+        }
+
+        function resetGame() {
+            if(confirm("Start a new game?")) {
+                usedSongs.clear();
+                historyList.innerHTML = "";
+                skipLetter();
+            }
         }
     </script>
 </body>
