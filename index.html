@@ -200,7 +200,8 @@ timerInterval: null,
 timeLeft: GAME_CONFIG.TURN_TIME,
 attempts: 0,
 waitingForRestart: false,
-firstWordCaptured: false
+firstWordCaptured: false,
+songValidated: false
 };
 
 const phoneticMap = { 
@@ -267,6 +268,7 @@ function startSinging(){
 gameState.attempts = 0;
 gameState.waitingForRestart = false;
 gameState.firstWordCaptured = false;
+gameState.songValidated = false;
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
 
@@ -326,6 +328,7 @@ validateAndMoveOn(text);
 }
 
 function validateAndMoveOn(songPhrase){
+if(gameState.songValidated) return;
 if (gameState.waitingForRestart) return;
 let words=songPhrase.trim().toUpperCase().split(/\s+/);
 
@@ -350,6 +353,7 @@ if((gameState.currentLetter==='T'||gameState.currentLetter==='D') && tFamily.inc
 if(isMatch){
 
 processSuccess(songPhrase);
+gameState.songValidated = true;
 gameState.attempts=0;
 
 }else{
@@ -410,7 +414,7 @@ historyList.prepend(li);
 
 stopSinging();
 
-status.innerText="Accepted! Next: "+nextLetter;
+status.innerText="✅ Correct start! Keep singing...";
 
 }
 
