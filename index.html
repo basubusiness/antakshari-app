@@ -207,6 +207,7 @@ currentTranscript: "",
 linesDetected: 0,
 lastSpeechTime: 0,
 lastLineText: "",
+lastPhrase: "",
 silenceTimer: null
 };
 
@@ -263,6 +264,7 @@ const recognition = createSpeechEngine();
 recognition.lang = 'hi-IN';
 recognition.continuous = true;
 recognition.interimResults = true;
+recognition.maxAlternatives = 1;
 
 micBtn.onclick = () => {
 if(!gameState.isRecording) startSinging();
@@ -311,6 +313,10 @@ let phrase="";
 for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
+if(phrase.length < 5) continue;
+
+if(phrase === gameState.lastPhrase) continue;
+gameState.lastPhrase = phrase;
 
 // Only capture transcript before validation
 if(!gameState.songValidated){
