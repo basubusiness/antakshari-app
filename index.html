@@ -377,16 +377,46 @@ validateAndMoveOn(text);
 
 function endSong(){
 
+if(!gameState.songValidated){
+status.innerText="Start the song correctly first.";
+return;
+}
+
 if(gameState.linesDetected < 2){
 status.innerText="Sing at least two lines before ending.";
 return;
 }
 
+commitSong();
+
+}
+
+
+function commitSong(){
+
 stopSinging();
+
+let transcript = gameState.currentTranscript.trim();
+let words = transcript.split(/\s+/);
+
+let preview = transcript;
+
+if(words.length > 8){
+let first4 = words.slice(0,4).join(" ");
+let last4 = words.slice(-4).join(" ");
+preview = first4 + " ... " + last4;
+}
+
+let firstItem = historyList.firstElementChild;
+
+if(firstItem){
+firstItem.innerHTML = `<span>${preview}</span>`;
+}
 
 status.innerText="🎵 Song ended. Next letter: "+gameState.currentLetter;
 
 }
+
     
 function validateAndMoveOn(songPhrase){
 if(gameState.songValidated) return;
