@@ -270,6 +270,7 @@ gameState.attempts = 0;
 gameState.waitingForRestart = false;
 gameState.firstWordCaptured = false;
 gameState.songValidated = false;
+gameState.currentTranscript = "";
 gameState.isRecording = true;
 gameState.timeLeft = GAME_CONFIG.TURN_TIME;
 
@@ -304,7 +305,8 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
-gameState.currentTranscript = phrase;
+gameState.currentTranscript += " " + phrase;
+gameState.currentTranscript = gameState.currentTranscript.trim();
 
 if(!gameState.firstWordCaptured){
 
@@ -356,7 +358,7 @@ if((gameState.currentLetter==='T'||gameState.currentLetter==='D') && tFamily.inc
 
 if(isMatch){
 
-processSuccess(words.join(" "));
+processSuccess(gameState.currentTranscript);
 gameState.songValidated = true;
 gameState.attempts=0;
 
