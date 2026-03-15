@@ -114,6 +114,7 @@ let words = gameState.fullTranscript
 .split(/\s+/)
 .filter(w => w.length > 1 && !fillers.includes(w));
 
+// remove repeated endings like "hai hai hai"
 for(let i = words.length - 1; i > 0; i--){
 if(words[i] === words[i-1]) words.splice(i,1);
 else break;
@@ -130,8 +131,7 @@ const vowels = ["A","E","I","O","U"];
 
 if(lastWord.endsWith("YE")){
 nextLetter = "Y";
-}
-else{
+}else{
 for(let i = lastWord.length-1; i >= 0; i--){
 let char = lastWord[i];
 if(!vowels.includes(char)){
@@ -154,7 +154,6 @@ stopSinging();
 },100);
 
 }
-
 /* rest of your script unchanged */
 
 </script>
