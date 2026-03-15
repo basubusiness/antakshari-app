@@ -8,6 +8,14 @@
 
 <style>
 
+#buzzerOverlay{
+animation: buzzFlash 0.9s ease;
+}
+    
+body { 
+
+
+
 @keyframes buzzFlash{
 0%{opacity:0; transform:scale(0.96);}
 20%{opacity:1; transform:scale(1);}
@@ -15,14 +23,11 @@
 100%{opacity:0; transform:scale(1.02);}
 }
 
-#buzzerOverlay{
-animation: buzzFlash 0.9s ease;
-}
 
-body{
-touch-action: manipulation;
-overflow: hidden;
-overscroll-behavior: none;
+    
+touch-action: manipulation; 
+overflow: hidden; 
+overscroll-behavior: none; 
 }
 
 button{
@@ -43,16 +48,15 @@ touch-action: manipulation;
 from{opacity:0;transform:translateY(-10px);}
 to{opacity:1;transform:translateY(0);}
 }
-
 </style>
 </head>
 
 <div id="buzzerOverlay" class="fixed inset-0 bg-red-700 bg-opacity-90 hidden flex items-center justify-center z-50">
-<div class="text-center">
-<div class="text-7xl font-black mb-4">❌</div>
-<div id="buzzerText" class="text-2xl font-bold"></div>
-</div>
-</div>
+    <div class="text-center">
+        <div class="text-7xl font-black mb-4">❌</div>
+        <div id="buzzerText" class="text-2xl font-bold"></div>
+    </div>
+</div>    
 
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-6">
 
@@ -96,6 +100,57 @@ Tap to start singing...
 
 <script>
 
+function buzzWrong(firstWord){
+
+status.innerText=`❌ Wrong start! Heard "${firstWord}"`;
+
+buzzerText.innerText=`Heard: "${firstWord}"`;
+
+buzzerOverlay.style.animation = "none";
+buzzerOverlay.offsetHeight; 
+buzzerOverlay.style.animation = null;
+buzzerOverlay.classList.remove("hidden");
+
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playNote(freq, start, duration){
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = freq;
+
+    gain.gain.setValueAtTime(0.12, ctx.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + duration);
+}
+
+playNote(660, 0.00, 0.15);   // E
+playNote(550, 0.15, 0.15);   // C#
+playNote(440, 0.30, 0.20);   // A
+
+    
+recognition.abort();
+
+setTimeout(()=>{
+
+buzzerOverlay.classList.add("hidden");
+
+if(gameState.isRecording){
+gameState.waitingForRestart=false;
+gameState.firstWordCaptured = false;
+recognition.start();
+}
+
+},900);
+
+}
+
 function startTimer(){
 
 gameState.timerInterval = setInterval(()=>{
@@ -112,9 +167,13 @@ let words = gameState.fullTranscript
 .split(/\s+/)
 .filter(w => w.length > 1 && !fillers.includes(w));
 
+// remove repeated endings like "hai hai hai"
 for(let i = words.length - 1; i > 0; i--){
-if(words[i] === words[i-1]) words.splice(i,1);
-else break;
+    if(words[i] === words[i-1]){
+        words.splice(i,1);
+    } else {
+        break;
+    }
 }
 
 let nextLetter = "A";
@@ -124,24 +183,35 @@ if(words.length){
 let lastWord = words[words.length-1].toUpperCase();
 lastWord = lastWord.replace(/[^A-Z]/g,"");
 
+// vowels
 const vowels = ["A","E","I","O","U"];
 
+// Hindi-style YE ending (kahiye, jaiye, liye)
 if(lastWord.endsWith("YE")){
-nextLetter = "Y";
-}else{
+    nextLetter = "Y";
+}
+else{
+
+// scan backward for last consonant sound
 for(let i = lastWord.length-1; i >= 0; i--){
+
 let char = lastWord[i];
+
 if(!vowels.includes(char)){
-nextLetter = char;
-break;
-}
-}
+    nextLetter = char;
+    break;
 }
 
+}
+
+}
 }
 
 gameState.currentLetter = nextLetter;
+
 updateUI();
+
+}
 
 status.innerText="Time Up! Next player.";
 stopSinging();
@@ -152,6 +222,278 @@ stopSinging();
 
 }
 
+function stopTimer(){
+
+clearInterval(gameState.timerInterval);
+
+timerBar.style.width="0%";
+
+}
+
+    
+
+const GAME_CONFIG = {
+TURN_TIME: 30,
+MAX_ATTEMPTS: 3
+};
+
+const alphabets = {
+latin: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+};
+
+const alphabet = alphabets.latin;
+
+const gameState = {
+currentLetter: "M",
+usedSongs: new Set(),
+isRecording: false,
+timerInterval: null,
+timeLeft: GAME_CONFIG.TURN_TIME,
+attempts: 0,
+waitingForRestart: false,
+firstWordCaptured: false,
+songValidated: false,
+fullTranscript: ""
+};
+
+const phoneticMap = { 
+'म':'M','न':'N','क':'K','ख':'K','ग':'G','घ':'G',
+'च':'C','छ':'C','ज':'J','झ':'J','त':'T','थ':'T',
+'द':'D','ध':'D','प':'P','ब':'B','भ':'B','व':'V',
+'य':'Y','र':'R','ल':'L','स':'S','ह':'H','अ':'A','आ':'A'
+};
+
+const fillers = ["अह","उम","ओह","UH","UM","OH","THE"];
+
+const bFamily = ['ब','भ','व','प','फ','B','V','P'];
+const tFamily = ['त','थ','ट','ठ','T','D','द','ध','ड','ढ'];
+
+const micBtn = document.getElementById('micBtn');
+const status = document.getElementById('status');
+const letterDisplay = document.getElementById('currentLetter');
+const historyList = document.getElementById('history');
+const timerBar = document.getElementById('timerBar');
+const buzzerOverlay = document.getElementById('buzzerOverlay');
+const buzzerText = document.getElementById('buzzerText');
+
+    
+function updateUI(){
+letterDisplay.innerText = gameState.currentLetter;
+}
+
+function normalizeSong(song){
+return song.toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function getRandomLetter(){
+const index = Math.floor(Math.random()*alphabet.length);
+return alphabet[index];
+}
+
+function restartRecognition(){
+    recognition.abort();
+    setTimeout(()=>{
+    if(gameState.isRecording){
+        gameState.waitingForRestart = false;
+        recognition.start();
+    }
+},150);
+}
+
+function createSpeechEngine(){
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+return new SpeechRecognition();
+}
+
+const recognition = createSpeechEngine();
+recognition.lang = 'hi-IN';
+recognition.continuous = true;
+recognition.interimResults = true;
+
+micBtn.onclick = () => {
+if(!gameState.isRecording) startSinging();
+else stopSinging();
+};
+
+function startSinging(){
+
+gameState.attempts = 0;
+gameState.waitingForRestart = false;
+gameState.firstWordCaptured = false;
+gameState.songValidated = false;
+gameState.isRecording = true;
+gameState.timeLeft = GAME_CONFIG.TURN_TIME;
+gameState.fullTranscript = "";
+
+status.innerText = "Listening... Sing now!";
+status.classList.remove('text-red-500');
+
+micBtn.classList.add('pulse','bg-red-500');
+
+try{recognition.start()}catch(e){}
+
+startTimer();
+
+}
+
+function stopSinging(){
+
+gameState.isRecording=false;
+
+stopTimer();
+
+try{recognition.stop()}catch(e){}
+
+micBtn.classList.remove('pulse','bg-red-500');
+
+}
+
+recognition.onresult = (event) => {
+
+let phrase="";
+
+for(let i=event.resultIndex;i<event.results.length;++i){
+
+phrase = event.results[i][0].transcript.trim();
+
+gameState.fullTranscript = phrase;   // store latest full transcript
+
+if(!gameState.firstWordCaptured){
+
+let words = phrase.split(/\s+/);
+
+if(words.length > 0 && words[0].length > 1){
+
+gameState.firstWordCaptured = true;
+handleVoiceInput(phrase);
+
+}
+
+}
+
+}
+
+if(gameState.isRecording)
+status.innerText="Heard: "+phrase;
+
+};
+    
+
+function handleVoiceInput(text){
+validateAndMoveOn(text);
+}
+
+function validateAndMoveOn(songPhrase){
+if(gameState.songValidated) return;
+if (gameState.waitingForRestart) return;
+let words=songPhrase.trim().toUpperCase().split(/\s+/);
+
+while(words.length>0 && fillers.includes(words[0])){
+words.shift();
+}
+
+if(words.length===0) return;
+
+const firstWord=words[0];
+const firstChar=firstWord.charAt(0);
+
+let detectedLetter=phoneticMap[firstChar]||firstChar;
+
+let isMatch=(detectedLetter===gameState.currentLetter);
+
+if(!isMatch){
+if((gameState.currentLetter==='V'||gameState.currentLetter==='B') && bFamily.includes(firstChar)) isMatch=true;
+if((gameState.currentLetter==='T'||gameState.currentLetter==='D') && tFamily.includes(firstChar)) isMatch=true;
+}
+
+if(isMatch){
+
+processSuccess(words.join(" "));
+gameState.songValidated = true;
+gameState.attempts=0;
+
+}else{
+
+gameState.attempts++;
+gameState.waitingForRestart = true;
+
+status.classList.add('text-red-500');
+
+if(gameState.attempts>=GAME_CONFIG.MAX_ATTEMPTS){
+
+status.innerText="❌ Strike 3! Next player's turn.";
+stopSinging();
+
+}else{
+
+buzzWrong(firstWord);
+
+}
+}
+
+}
+
+function processSuccess(cleanSong){
+
+if(gameState.usedSongs.has(normalizeSong(cleanSong))){
+status.innerText="Already sung! Try another.";
+return;
+}
+
+gameState.usedSongs.add(normalizeSong(cleanSong));
+
+let nextLetter="A";
+
+for(let i=cleanSong.length-1;i>=0;i--){
+
+let mapped=phoneticMap[cleanSong[i]]||cleanSong[i].toUpperCase();
+
+if(alphabet.includes(mapped)){
+nextLetter=mapped;
+break;
+}
+
+}
+
+gameState.songValidated = true;
+gameState.firstWordCaptured = false;
+const li=document.createElement('li');
+
+li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
+
+li.innerHTML=`<span>${cleanSong}</span>`;
+historyList.prepend(li);
+
+
+status.innerText="✅ Correct start! Keep singing...";
+
+}
+
+function skipLetter(){
+
+gameState.currentLetter=getRandomLetter();
+
+updateUI();
+
+status.innerText="New letter: "+gameState.currentLetter;
+
+}
+
+function resetGame(){
+
+if(confirm("Reset game?")){
+
+gameState.usedSongs.clear();
+
+historyList.innerHTML="";
+
+skipLetter();
+
+}
+
+}
+
 </script>
+
 </body>
 </html>
