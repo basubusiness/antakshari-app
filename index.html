@@ -48,12 +48,13 @@
         let usedSongs = new Set();
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         
-        // Mapping Hindi characters to English letters
-        const hindiMap = {
-            'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I', 'उ': 'U', 'ऊ': 'U', 'ए': 'E', 'ऐ': 'A', 'ओ': 'O', 'औ': 'O',
-            'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 'ट': 'T', 'ठ': 'T',
-            'ड': 'D', 'ढ': 'D', 'त': 'T', 'थ': 'T', 'द': 'D', 'ध': 'D', 'न': 'N', 'प': 'P', 'फ': 'P', 'ब': 'B',
-            'भ': 'B', 'म': 'M', 'य': 'Y', 'र': 'R', 'ल': 'L', 'व': 'V', 'श': 'S', 'ष': 'S', 'स': 'S', 'ह': 'H'
+        // Comprehensive Hindi to English Phonetic Map
+        const phoneticMap = {
+            'म': 'M', 'न': 'N', 'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 
+            'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 'त': 'T', 'थ': 'T', 
+            'द': 'D', 'ध': 'D', 'प': 'P', 'फ': 'P', 'ब': 'B', 'भ': 'B', 
+            'य': 'Y', 'र': 'R', 'ल': 'L', 'व': 'V', 'स': 'S', 'श': 'S', 
+            'ष': 'S', 'ह': 'H', 'अ': 'A', 'आ': 'A', 'इ': 'I', 'ई': 'I'
         };
 
         const micBtn = document.getElementById('micBtn');
@@ -66,13 +67,13 @@
         recognition.lang = 'hi-IN'; 
 
         micBtn.onclick = () => {
-            try { recognition.start(); } catch(e) {}
+            try { recognition.start(); } catch(e) { console.error(e); }
             status.innerText = "Listening...";
             micBtn.classList.add('pulse', 'bg-red-500');
         };
 
         recognition.onresult = (event) => {
-            let song = event.results[0][0].transcript;
+            const song = event.results[0][0].transcript;
             processSong(song);
         };
 
@@ -80,38 +81,42 @@
 
         function processSong(song) {
             const cleanSong = song.trim();
-            let firstChar = cleanSong.charAt(0);
+            const firstChar = cleanSong.charAt(0);
             
-            // If the first character is Hindi, convert it to English letter
-            if (hindiMap[firstChar]) {
-                firstChar = hindiMap[firstChar];
-            } else {
-                firstChar = firstChar.toUpperCase();
-            }
-            
-            if (firstChar !== currentLetter) {
-                status.innerText = `Must start with ${currentLetter}. (Detected: ${cleanSong[0]})`;
+            // CONVERSION LOGIC:
+            // Check if the character is in our Hindi map, else use English uppercase
+            let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
+
+            // 1. Validation
+            if (detectedLetter !== currentLetter) {
+                status.innerText = `Must start with ${currentLetter}. (Detected: ${firstChar})`;
                 return;
             }
 
             if (usedSongs.has(cleanSong.toLowerCase())) {
-                status.innerText = "Already played!";
+                status.innerText = "Already sung!";
                 return;
             }
 
+            // 2. State Update
             usedSongs.add(cleanSong.toLowerCase());
             
-            // Get last letter (handle Hindi or English)
+            // Logic for the NEXT letter: 
+            // We look at the very last character of the song string
             let lastCharRaw = cleanSong.slice(-1);
-            let lastChar = hindiMap[lastCharRaw] || lastCharRaw.toUpperCase();
-            
-            // Safety: if the last char isn't a letter (like a matra), 
-            // we grab the second to last or stay on a random letter.
-            if (!alphabet.includes(lastChar)) {
-                lastChar = alphabet[Math.floor(Math.random() * 26)];
-            }
+            let nextLetter = phoneticMap[lastCharRaw] || lastCharRaw.toUpperCase();
 
-            updateGame(cleanSong, lastChar);
+            // If the last character is a Hindi vowel/matra (which doesn't map to a consonant),
+            // we look at the character before it.
+            if (!alphabet.includes(nextLetter)) {
+                let secondLast = cleanSong.slice(-2, -1);
+                nextLetter = phoneticMap[secondLast] || secondLast.toUpperCase() || "A";
+            }
+            
+            // Final fallback to ensure it's a valid A-Z letter
+            if (!alphabet.includes(nextLetter)) nextLetter = "A";
+
+            updateGame(cleanSong, nextLetter);
         }
 
         function updateGame(song, nextLetter) {
@@ -135,5 +140,6 @@
             skipLetter();
         }
     </script>
+
 </body>
 </html>
