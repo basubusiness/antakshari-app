@@ -10,20 +10,11 @@
             touch-action: manipulation; 
             overflow: hidden; 
             overscroll-behavior: none; 
-            transition: background 0.3s;
         }
         .pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .bg-error { background-color: #7f1d1d !important; }
-        .shake { animation: shake 0.4s; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-6">
@@ -49,7 +40,7 @@
             </svg>
         </button>
 
-        <p id="status" class="text-yellow-200 italic h-12 mb-4 text-sm font-medium px-4 flex items-center justify-center leading-tight text-center">
+        <p id="status" class="text-yellow-200 italic h-12 mb-4 text-sm font-medium px-4 flex items-center justify-center leading-tight">
             Tap to start singing...
         </p>
         
@@ -71,8 +62,6 @@
         let isRecording = false;
         let timerInterval;
         let timeLeft = 30;
-        let attempts = 0; 
-        const MAX_ATTEMPTS = 3;
 
         const phoneticMap = { 
             'म': 'M', 'न': 'N', 'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 
@@ -101,11 +90,9 @@
         };
 
         function startSinging() {
-            attempts = 0;
             isRecording = true;
             timeLeft = 30;
             status.innerText = "Listening... Sing now!";
-            status.classList.remove('text-red-500');
             micBtn.classList.add('pulse', 'bg-red-500');
             try { recognition.start(); } catch(e) {}
 
@@ -125,7 +112,6 @@
             try { recognition.stop(); } catch(e) {}
             micBtn.classList.remove('pulse', 'bg-red-500');
             timerBar.style.width = "0%";
-            document.body.classList.remove('bg-error');
         }
 
         recognition.onresult = (event) => {
@@ -133,39 +119,62 @@
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 phrase = event.results[i][0].transcript.trim();
                 if (event.results[i].isFinal) {
-                    validateAndMoveOn(phrase);
+                    processValidation(phrase);
                 }
             }
             if(isRecording) status.innerText = "Heard: " + phrase;
         };
 
-        function validateAndMoveOn(songPhrase) {
-            const firstWord = songPhrase.split(/\s+/)[0].toUpperCase();
-            const firstChar = firstWord.charAt(0);
-            let detectedLetter = phoneticMap[firstChar] || firstChar;
+        function processValidation(songPhrase) {
+            const firstChar = songPhrase.charAt(0);
+            let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
             let isMatch = (detectedLetter === currentLetter);
             if (!isMatch && (currentLetter === 'V' || currentLetter === 'B') && bFamily.includes(firstChar)) isMatch = true;
 
             if (isMatch) {
-                processSuccess(songPhrase);
-            } else {
-                attempts++;
-                triggerVisualError();
-                if (attempts >= MAX_ATTEMPTS) {
-                    status.innerText = "Max Attempts Reached!";
-                    stopSinging();
-                } else {
-                    status.innerText = `Incorrect: "${firstWord}". Try again (${attempts}/3)`;
-                    status.classList.add('text-red-500');
-                    // Reset mic for fresh start
-                    recognition.abort();
-                    setTimeout(() => { if(isRecording) try { recognition.start(); } catch(e) {} }, 200);
+                if (usedSongs.has(songPhrase.toLowerCase())) {
+                    status.innerText = "Already sung!";
+                    return; 
                 }
+                
+                usedSongs.add(songPhrase.toLowerCase());
+                
+                let nextLetter = "A"; 
+                for (let i = songPhrase.length - 1; i >= 0; i--) {
+                    let mapped = phoneticMap[songPhrase[i]] || songPhrase[i].toUpperCase();
+                    if (alphabet.includes(mapped)) {
+                        nextLetter = mapped;
+                        break; 
+                    }
+                }
+
+                currentLetter = nextLetter;
+                letterDisplay.innerText = currentLetter;
+                
+                const li = document.createElement('li');
+                li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
+                li.innerHTML = `<span>${songPhrase}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
+                historyList.prepend(li);
+                
+                stopSinging();
+                status.innerText = "Success! Next: " + nextLetter;
+            } else {
+                status.innerText = `Need ${currentLetter}. (Heard: ${firstChar})`;
             }
         }
 
-        function triggerVisualError() {
-            document.body.classList.add('bg-error');
-            document.querySelector('.bg-slate-800').classList.add('shake');
-            if (navigator.vibrate) navigator.
+        function skipLetter() {
+            currentLetter = alphabet[Math.floor(Math.random() * 26)];
+            letterDisplay.innerText = currentLetter;
+            status.innerText = "New letter: " + currentLetter;
+        }
+
+        function resetGame() {
+            usedSongs.clear();
+            historyList.innerHTML = "";
+            skipLetter();
+        }
+    </script>
+</body>
+</html>
