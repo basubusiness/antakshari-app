@@ -322,7 +322,7 @@ handleVoiceInput(phrase);
 
 }
 
-if(gameState.songValidated){
+if(gameState.songValidated && historyList.firstElementChild){
 updateHistoryPreview();
 }
 
@@ -464,7 +464,6 @@ firstItem.innerHTML = `<span>${preview}</span>`;
 }
 
 }
-
     
 
 function skipLetter(){
