@@ -305,8 +305,7 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
-gameState.currentTranscript += " " + phrase;
-gameState.currentTranscript = gameState.currentTranscript.trim();
+gameState.currentTranscript = phrase;
 
 if(!gameState.firstWordCaptured){
 
@@ -321,6 +320,10 @@ handleVoiceInput(phrase);
 
 }
 
+}
+
+if(gameState.songValidated){
+updateHistoryPreview();
 }
 
 if(gameState.isRecording)
@@ -383,6 +386,12 @@ buzzWrong(firstWord);
 
 }
 
+
+
+
+
+
+    
 function processSuccess(cleanSong){
 
 if(gameState.usedSongs.has(normalizeSong(cleanSong))){
@@ -423,7 +432,7 @@ const li=document.createElement('li');
 
 li.className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
 
-li.innerHTML=`<span>${preview}</span>`;
+li.innerHTML=`<span>Listening...</span>`;
 historyList.prepend(li);
 
 gameState.currentLetter = nextLetter;
@@ -431,6 +440,32 @@ updateUI();
 
 status.innerText="✅ Correct start! Keep singing...";
 }
+
+
+
+
+function updateHistoryPreview(){
+
+let transcript = gameState.currentTranscript.trim();
+let words = transcript.split(/\s+/);
+
+let preview = transcript;
+
+if(words.length > 8){
+let first4 = words.slice(0,4).join(" ");
+let last4 = words.slice(-4).join(" ");
+preview = first4 + " ... " + last4;
+}
+
+let firstItem = historyList.firstChild;
+
+if(firstItem){
+firstItem.innerHTML = `<span>${preview}</span>`;
+}
+
+}
+
+    
 
 function skipLetter(){
 
