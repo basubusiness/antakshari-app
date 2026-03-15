@@ -312,17 +312,11 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
-if(gameState.songValidated){
-
-gameState.currentTranscript += " " + phrase;
-gameState.currentTranscript = gameState.currentTranscript.trim();
-
-}else{
-
+// Only capture transcript before validation
+if(!gameState.songValidated){
 gameState.currentTranscript = phrase;
-
 }
-
+    
 gameState.lastSpeechTime = Date.now();
 
 let words = phrase.trim().split(/\s+/);
@@ -338,8 +332,12 @@ gameState.linesDetected++;
 gameState.lastLineText = lineKey;
 
 if(gameState.songValidated){
+
+if(!gameState.currentTranscript.includes(phrase)){
 gameState.currentTranscript += " " + phrase;
 gameState.currentTranscript = gameState.currentTranscript.trim();
+}
+
 }
 
 }
