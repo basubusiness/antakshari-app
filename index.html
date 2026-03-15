@@ -2,21 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Antakshari Lite 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Antakshari AI 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body { 
+            touch-action: manipulation; 
+            overflow: hidden; 
+            overscroll-behavior: none; 
+        }
         .pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-    <style>
-  body { 
-    touch-action: manipulation; 
-    overflow: hidden; /* Prevents accidental scrolling */
-    overscroll-behavior: none; 
-  }
-</style>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-6">
 
@@ -25,22 +24,29 @@
         <p class="text-slate-400 text-sm">Lightweight Social Edition</p>
     </header>
 
-    <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-slate-700">
+    <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-slate-700 relative">
+        
+        <div class="w-full bg-slate-700 h-1.5 rounded-full mb-6 overflow-hidden">
+            <div id="timerBar" class="bg-yellow-500 h-full w-0 transition-all duration-100"></div>
+        </div>
+
         <div class="mb-4">
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Current Letter</span>
             <div id="currentLetter" class="text-9xl font-black text-white mt-2 transition-all">M</div>
         </div>
 
-        <button id="micBtn" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-all active:scale-90 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+        <button id="micBtn" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 transition-all active:scale-95 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 005 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-2v-2.07z" clip-rule="evenodd" />
+                <path d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 005 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-2v-2.07z" />
             </svg>
         </button>
 
-        <p id="status" class="text-yellow-200 italic h-6 mb-4 text-sm font-medium">Tap to sing your song...</p>
+        <p id="status" class="text-yellow-200 italic h-12 mb-4 text-sm font-medium px-4 flex items-center justify-center leading-tight">
+            Tap to start singing...
+        </p>
         
         <div class="flex gap-2 justify-center">
-            <button onclick="skipLetter()" class="text-xs bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-full text-slate-300">Skip Letter</button>
+            <button onclick="skipLetter()" class="text-xs bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-full text-slate-300">Skip</button>
             <button onclick="resetGame()" class="text-xs bg-red-900/30 hover:bg-red-900/50 px-4 py-2 rounded-full text-red-400 border border-red-900/50">Reset</button>
         </div>
     </div>
@@ -51,19 +57,24 @@
             </ul>
     </div>
 
-<div class="w-full bg-slate-700 h-2 rounded-full mb-4 overflow-hidden">
-        <div id="timerBar" class="bg-yellow-500 h-full w-0 transition-all duration-100"></div>
-    </div>
-
     <script>
         let currentLetter = "M";
         let usedSongs = new Set();
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         let isRecording = false;
         let timerInterval;
-        let timeLeft = 30; // Max song duration in seconds
+        let timeLeft = 30;
 
-        const phoneticMap = { 'म': 'M', 'न': 'N', 'क': 'K', 'ग': 'G', 'च': 'C', 'ज': 'J', 'त': 'T', 'द': 'D', 'प': 'P', 'ब': 'B', 'भ': 'B', 'व': 'V', 'य': 'Y', 'र': 'R', 'ल': 'L', 'स': 'S', 'ह': 'H', 'अ': 'A', 'आ': 'A' };
+        // Phonetic Mapping for AI recognition
+        const phoneticMap = { 
+            'म': 'M', 'न': 'N', 'क': 'K', 'ख': 'K', 'ग': 'G', 'घ': 'G', 
+            'च': 'C', 'छ': 'C', 'ज': 'J', 'झ': 'J', 'त': 'T', 'थ': 'T', 
+            'द': 'D', 'ध': 'D', 'प': 'P', 'ब': 'B', 'भ': 'B', 'व': 'V', 
+            'य': 'Y', 'र': 'R', 'ल': 'L', 'स': 'S', 'ह': 'H', 'अ': 'A', 'आ': 'A' 
+        };
+
+        const bFamily = ['ब', 'भ', 'व', 'प', 'फ', 'B', 'V', 'P'];
+        const tFamily = ['त', 'थ', 'ट', 'ठ', 'T', 'D', 'द', 'ध', 'ड', 'ढ'];
 
         const micBtn = document.getElementById('micBtn');
         const status = document.getElementById('status');
@@ -73,115 +84,113 @@
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        
-        // LENIENT SETTINGS
         recognition.lang = 'hi-IN'; 
-        recognition.continuous = true; // Keeps listening during pauses
-        recognition.interimResults = true; // Shows text as you sing
-
-        let finalTranscript = "";
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
         micBtn.onclick = () => {
-            if (!isRecording) {
-                startSinging();
-            } else {
-                stopSinging();
-            }
+            if (!isRecording) startSinging();
+            else stopSinging();
         };
 
         function startSinging() {
-            finalTranscript = "";
             isRecording = true;
-            timeLeft = 30; // Upper limit 30s
-            status.innerText = "Singing... (Tap again to Finish)";
+            timeLeft = 30;
+            status.innerText = "Listening... Sing now!";
+            status.classList.remove('text-red-500');
             micBtn.classList.add('pulse', 'bg-red-500');
-            
             try { recognition.start(); } catch(e) {}
 
-            // Start Progress Bar
             timerInterval = setInterval(() => {
                 timeLeft -= 0.1;
-                let percentage = ((30 - timeLeft) / 30) * 100;
-                timerBar.style.width = percentage + "%";
-                
-                if (timeLeft <= 0) stopSinging();
+                timerBar.style.width = ((30 - timeLeft) / 30) * 100 + "%";
+                if (timeLeft <= 0) {
+                    status.innerText = "Time Up! Next player.";
+                    stopSinging();
+                }
             }, 100);
         }
 
         function stopSinging() {
             isRecording = false;
             clearInterval(timerInterval);
-            recognition.stop();
+            try { recognition.stop(); } catch(e) {}
             micBtn.classList.remove('pulse', 'bg-red-500');
             timerBar.style.width = "0%";
-            
-            if (finalTranscript) {
-                processSong(finalTranscript);
-            } else {
-                status.innerText = "No song detected. Try again!";
-            }
         }
 
         recognition.onresult = (event) => {
-            let interim = "";
+            let phrase = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+                phrase = event.results[i][0].transcript.trim();
+                // We check on every phrase the AI finalizes
                 if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                } else {
-                    interim += event.results[i][0].transcript;
+                    validateAndMoveOn(phrase);
                 }
             }
-            // Show live feedback so user knows it's working
-            status.innerText = "Heard: " + (finalTranscript || interim);
+            if(isRecording) status.innerText = "Heard: " + phrase;
         };
 
-        function processSong(song) {
-            const cleanSong = song.trim().replace(/[.,!?;:]/g, "");
-            if (!cleanSong) return;
-
+        function validateAndMoveOn(songPhrase) {
+            const cleanSong = songPhrase.replace(/[.,!?;:]/g, "");
             const firstChar = cleanSong.charAt(0);
             let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
-            // Relaxed Validation Logic
+            // Sound Family Matching
             let isMatch = (detectedLetter === currentLetter);
-            const bFamily = ['ब', 'भ', 'व', 'प', 'फ', 'B', 'V', 'P'];
-            if (!isMatch && (currentLetter === 'V' || currentLetter === 'B')) {
-                if (bFamily.includes(firstChar) || bFamily.includes(detectedLetter)) isMatch = true;
-            }
-
             if (!isMatch) {
-                status.innerText = `Need ${currentLetter}. (Heard: ${firstChar})`;
-                return;
+                if ((currentLetter === 'V' || currentLetter === 'B') && bFamily.includes(firstChar)) isMatch = true;
+                if ((currentLetter === 'T' || currentLetter === 'D') && tFamily.includes(firstChar)) isMatch = true;
             }
 
-            if (usedSongs.has(cleanSong.toLowerCase())) {
-                status.innerText = "Already sung!";
-                return;
-            }
-
-            usedSongs.add(cleanSong.toLowerCase());
-            
-            // Smart Last Letter
-            let nextLetter = "A"; 
-            for (let i = cleanSong.length - 1; i >= 0; i--) {
-                let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
-                if (alphabet.includes(mapped)) {
-                    nextLetter = mapped;
-                    break; 
+            if (isMatch) {
+                if (usedSongs.has(cleanSong.toLowerCase())) {
+                    status.innerText = "Already sung! Try another song.";
+                    return; 
                 }
-            }
+                
+                // Logic for success
+                usedSongs.add(cleanSong.toLowerCase());
+                
+                // Find Next Letter (Scan backwards)
+                let nextLetter = "A"; 
+                for (let i = cleanSong.length - 1; i >= 0; i--) {
+                    let mapped = phoneticMap[cleanSong[i]] || cleanSong[i].toUpperCase();
+                    if (alphabet.includes(mapped)) {
+                        nextLetter = mapped;
+                        break; 
+                    }
+                }
 
-            updateGame(cleanSong, nextLetter);
+                currentLetter = nextLetter;
+                letterDisplay.innerText = currentLetter;
+                
+                const li = document.createElement('li');
+                li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2 animate-fadeIn";
+                li.innerHTML = `<span>${cleanSong}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
+                historyList.prepend(li);
+                
+                stopSinging();
+                status.innerText = "Success! Next Letter: " + nextLetter;
+            } else {
+                // If wrong, we keep the mic on and let them try again
+                status.innerText = `Must start with ${currentLetter}. (Heard: ${firstChar})`;
+                status.classList.add('text-red-500');
+            }
         }
 
-        function updateGame(song, nextLetter) {
-            currentLetter = nextLetter;
+        function skipLetter() {
+            currentLetter = alphabet[Math.floor(Math.random() * 26)];
             letterDisplay.innerText = currentLetter;
-            status.innerText = "Nice! Next Letter: " + nextLetter;
-            const li = document.createElement('li');
-            li.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center mb-2";
-            li.innerHTML = `<span>${song}</span> <span class="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-xs font-bold">${currentLetter}</span>`;
-            historyList.prepend(li);
+            status.innerText = "New letter: " + currentLetter;
+        }
+
+        function resetGame() {
+            if(confirm("Reset game?")) {
+                usedSongs.clear();
+                historyList.innerHTML = "";
+                skipLetter();
+            }
         }
     </script>
 </body>
