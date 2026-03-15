@@ -8,12 +8,6 @@
 
 <style>
 
-#buzzerOverlay{
-animation: buzzFlash 0.9s ease;
-}
-
-body {
-
 @keyframes buzzFlash{
 0%{opacity:0; transform:scale(0.96);}
 20%{opacity:1; transform:scale(1);}
@@ -21,9 +15,14 @@ body {
 100%{opacity:0; transform:scale(1.02);}
 }
 
-touch-action: manipulation; 
-overflow: hidden; 
-overscroll-behavior: none; 
+#buzzerOverlay{
+animation: buzzFlash 0.9s ease;
+}
+
+body{
+touch-action: manipulation;
+overflow: hidden;
+overscroll-behavior: none;
 }
 
 button{
@@ -44,6 +43,7 @@ touch-action: manipulation;
 from{opacity:0;transform:translateY(-10px);}
 to{opacity:1;transform:translateY(0);}
 }
+
 </style>
 </head>
 
@@ -96,8 +96,6 @@ Tap to start singing...
 
 <script>
 
-/* unchanged code omitted above for brevity */
-
 function startTimer(){
 
 gameState.timerInterval = setInterval(()=>{
@@ -114,7 +112,6 @@ let words = gameState.fullTranscript
 .split(/\s+/)
 .filter(w => w.length > 1 && !fillers.includes(w));
 
-// remove repeated endings like "hai hai hai"
 for(let i = words.length - 1; i > 0; i--){
 if(words[i] === words[i-1]) words.splice(i,1);
 else break;
@@ -154,7 +151,6 @@ stopSinging();
 },100);
 
 }
-/* rest of your script unchanged */
 
 </script>
 </body>
