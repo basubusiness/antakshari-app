@@ -80,14 +80,14 @@
         recognition.onend = () => { micBtn.classList.remove('pulse', 'bg-red-500'); };
 
         function processSong(song) {
-            const cleanSong = song.trim();
+            // 1. Clean the input: Remove punctuation like periods, commas, and trailing spaces
+            const cleanSong = song.trim().replace(/[.,!?;:]/g, "");
             const firstChar = cleanSong.charAt(0);
             
-            // CONVERSION LOGIC:
-            // Check if the character is in our Hindi map, else use English uppercase
+            // Map the first character to English
             let detectedLetter = phoneticMap[firstChar] || firstChar.toUpperCase();
 
-            // 1. Validation
+            // Validation
             if (detectedLetter !== currentLetter) {
                 status.innerText = `Must start with ${currentLetter}. (Detected: ${firstChar})`;
                 return;
@@ -98,23 +98,20 @@
                 return;
             }
 
-            // 2. State Update
             usedSongs.add(cleanSong.toLowerCase());
             
-            // Logic for the NEXT letter: 
-            // We look at the very last character of the song string
-            let lastCharRaw = cleanSong.slice(-1);
-            let nextLetter = phoneticMap[lastCharRaw] || lastCharRaw.toUpperCase();
-
-            // If the last character is a Hindi vowel/matra (which doesn't map to a consonant),
-            // we look at the character before it.
-            if (!alphabet.includes(nextLetter)) {
-                let secondLast = cleanSong.slice(-2, -1);
-                nextLetter = phoneticMap[secondLast] || secondLast.toUpperCase() || "A";
+            // 2. SMART LAST LETTER LOGIC
+            // We loop backwards from the end of the song to find the first valid A-Z or Hindi consonant
+            let nextLetter = "A"; // Default fallback
+            for (let i = cleanSong.length - 1; i >= 0; i--) {
+                let char = cleanSong[i];
+                let mapped = phoneticMap[char] || char.toUpperCase();
+                
+                if (alphabet.includes(mapped)) {
+                    nextLetter = mapped;
+                    break; 
+                }
             }
-            
-            // Final fallback to ensure it's a valid A-Z letter
-            if (!alphabet.includes(nextLetter)) nextLetter = "A";
 
             updateGame(cleanSong, nextLetter);
         }
