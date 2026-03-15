@@ -105,6 +105,10 @@ function buzzWrong(firstWord){
 status.innerText=`❌ Wrong start! Heard "${firstWord}"`;
 
 buzzerText.innerText=`Heard: "${firstWord}"`;
+
+buzzerOverlay.style.animation = "none";
+buzzerOverlay.offsetHeight; 
+buzzerOverlay.style.animation = null;
 buzzerOverlay.classList.remove("hidden");
 
 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -294,10 +298,8 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase=event.results[i][0].transcript.trim();
 
-if(event.results[i].isFinal){
-
+if(phrase.length > 6){
 handleVoiceInput(phrase);
-
 }
 
 }
