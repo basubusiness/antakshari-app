@@ -303,14 +303,16 @@ for(let i=event.resultIndex;i<event.results.length;++i){
 
 phrase = event.results[i][0].transcript.trim();
 
-if(gameState.firstWordCaptured) return;
+if(!gameState.firstWordCaptured){
 
 let words = phrase.split(/\s+/);
 
 if(words.length > 0 && words[0].length > 1){
 
 gameState.firstWordCaptured = true;
-handleVoiceInput(phrase);   // ← pass full phrase
+handleVoiceInput(phrase);
+
+}
 
 }
 
@@ -352,7 +354,7 @@ if((gameState.currentLetter==='T'||gameState.currentLetter==='D') && tFamily.inc
 
 if(isMatch){
 
-processSuccess(songPhrase);
+processSuccess(words.join(" "));
 gameState.songValidated = true;
 gameState.attempts=0;
 
